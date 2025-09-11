@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JobFit AI | Modern AI Resume Analyzer</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.13.216/pdf.min.js"></script>
+  <script>
+    // Tell PDF.js where to load its worker from your original script
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.13.216/pdf.worker.min.js";
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #0d6efd;
+      --primary-hover: #0b5ed7;
+      --secondary-color: #6c757d;
+      --background-color: #f8f9fa;
+      --section-bg-light: #ffffff;
+      --text-color: #212529;
+      --heading-color: #1d2d35;
+      --border-color: #dee2e6;
+      --shadow-color: rgba(0, 0, 0, 0.07);
+      --font-family: 'Inter', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font-family);
+      background-color: var(--background-color);
+      margin: 0;
+      color: var(--text-color);
+      line-height: 1.6;
+    }
+
+    .content-wrapper {
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    h1, h2, h3 { color: var(--heading-color); font-weight: 700; }
+
+    .navbar {
+      background-color: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1rem 0;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .nav-content { display: flex; justify-content: space-between; align-items: center; }
+    .logo { font-size: 1.5rem; font-weight: 800; color: var(--primary-color); text-decoration: none; }
+    .nav-links a {
+      color: var(--secondary-color);
+      text-decoration: none;
+      margin-left: 1.5rem;
+      font-weight: 500;
+      transition: color 0.3s;
+    }
+    .nav-links a:hover { color: var(--primary-color); }
+
+    .hero { padding: 6rem 0; text-align: center; background: linear-gradient(135deg, #eef7ff 0%, #ffffff 100%); }
+    .hero h1 { font-size: 3.5rem; font-weight: 800; max-width: 800px; margin: 0 auto 1rem; }
+    .hero p { font-size: 1.25rem; color: var(--secondary-color); max-width: 700px; margin: 0 auto 3rem; }
+
+    .tool-container {
+      background: var(--section-bg-light);
+      padding: 2.5rem;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px var(--shadow-color);
+      text-align: left;
+      margin-top: 2rem;
+      border: 1px solid var(--border-color);
+    }
+
+    .form-group { margin-bottom: 2rem; }
+    .form-group label { display: block; font-weight: 600; margin-bottom: 0.75rem; }
+
+    .file-upload-wrapper {
+      border: 2px dashed var(--border-color);
+      border-radius: 8px;
+      padding: 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.3s, background-color 0.3s;
+    }
+    .file-upload-wrapper:hover { border-color: var(--primary-color); background-color: #f8f9fa; }
+    #resumeFile { display: none; }
+    .file-upload-text { color: var(--primary-color); font-weight: 500; }
+    #fileName { margin-top: 0.75rem; font-style: italic; color: var(--secondary-color); }
+
+    textarea, input[type="text"] {
+      width: 100%;
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      font-family: var(--font-family);
+      font-size: 1rem;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    textarea:focus, input[type="text"]:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.2);
+    }
+
+    button {
+      width: 100%;
+      padding: 1rem;
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1.1rem;
+      font-weight: 600;
+      transition: background-color 0.3s, transform 0.2s;
+    }
+    button:hover { background: var(--primary-hover); transform: translateY(-2px); }
+
+    .status-container { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 1.5rem; min-height: 24px; }
+    .loader {
+      width: 20px; height: 20px; border: 3px solid #e9ecef;
+      border-top-color: var(--primary-color); border-radius: 50%;
+      animation: spin 1s linear infinite; display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #output-container { margin-top: 1.5rem; }
+    #output {
+      background: #f8f9fa; border: 1px solid var(--border-color);
+      padding: 1.5rem; border-radius: 8px; white-space: pre-wrap;
+      word-wrap: break-word; line-height: 1.7; min-height: 100px;
+    }
+    #output:empty { display: none; } /* Hide output box when empty */
+
+    footer { text-align: center; padding: 2rem 0; color: var(--secondary-color); }
+
+    @media (max-width: 768px) {
+      .hero { padding: 4rem 0;}
+      .hero h1 { font-size: 2.5rem; }
+      .hero p { font-size: 1.1rem; }
+      .tool-container { padding: 1.5rem; }
+      .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="content-wrapper nav-content">
+      <a href="#" class="logo">JobFit AI ✨</a>
+      <div class="nav-links">
+        <a href="#tool">Try Now</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <section class="hero" id="tool">
+      <div class="content-wrapper">
+        <h1>Land Your Dream Job Faster</h1>
+        <p>Our AI analyzes your resume against any job description to give you a detailed fit-gap analysis, identify missing keywords, and suggest powerful improvements.</p>
+
+        <div class="tool-container">
+          <div class="form-group">
+            <label for="resumeFile">1. Upload Your Resume</label>
+            <label for="resumeFile" class="file-upload-wrapper">
+              <span class="file-upload-text">Click to upload (.pdf or .txt)</span>
+              <div id="fileName">No file selected</div>
+            </label>
+            <input type="file" id="resumeFile" accept=".pdf,.txt" onchange="updateFileName()" />
+          </div>
+
+          <div class="form-group">
+            <label for="jdText">2. Paste Job Description</label>
+            <textarea id="jdText" rows="8" placeholder="Paste the job description here..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="chatPrompt">3. What should the AI do?</label>
+            <input type="text" id="chatPrompt" placeholder="e.g., Give match %, missing skills..." />
+          </div>
+
+          <button onclick="submitJobFit()">✨ Generate My Analysis</button>
+
+          <div class="status-container">
+            <div class="loader"></div>
+            <p id="status"></p>
+          </div>
+
+          <div id="output-container">
+            <div id="output"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="content-wrapper">
+      <p>&copy; 2025 JobFit AI. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    // This function is for the new UI to show the selected file name
+    function updateFileName() {
+      const fileInput = document.getElementById("resumeFile");
+      const fileNameEl = document.getElementById("fileName");
+      fileNameEl.textContent = fileInput.files.length > 0 ? fileInput.files[0].name : "No file selected";
+    }
+    
+    // Your original PDF extraction logic
+    async function extractTextFromPDF(file) {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let text = "";
+
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        text += content.items.map(item => item.str).join(" ") + "\n";
+      }
+
+      return text;
+    }
+    
+    // Your original submission logic, adapted for the new UI elements
+    async function submitJobFit() {
+      const fileInput = document.getElementById("resumeFile");
+      const jd = document.getElementById("jdText").value.trim();
+      const chatPrompt = document.getElementById("chatPrompt").value.trim() || "Analyze resume and job description.";
+
+      const statusEl = document.getElementById("status");
+      const outputEl = document.getElementById("output");
+      const loaderEl = document.querySelector(".loader"); // Get the new loader element
+
+      if (!fileInput.files.length) {
+        alert("Please upload a resume.");
+        return;
+      }
+      
+      // Update UI to show processing state
+      statusEl.textContent = "Processing...";
+      loaderEl.style.display = 'block';
+      outputEl.innerHTML = ""; // Clear previous output
+      outputEl.style.display = 'none'; // Hide output container while processing
+
+      try {
+        const file = fileInput.files[0];
+        let resumeText = "";
+
+        if (file.type === "application/pdf") {
+          resumeText = await extractTextFromPDF(file);
+        } else {
+          resumeText = await file.text();
+        }
+
+        // --- CORE LOGIC FROM YOUR ORIGINAL SCRIPT ---
+        const payload = {
+          output_type: "chat",
+          input_type: "chat",
+          tweaks: {
+            "File-uUnbb": { input_value: resumeText },
+            "TextInput-rmYC1": { input_value: jd },
+            "ChatInput-fYe0R": { input_value: chatPrompt }
+          },
+          session_id: "user_1"
+        };
+        
+        const res = await fetch("http://localhost:7860/Your_langflow_address", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": "your langflow api key"
+          },
+          body: JSON.stringify(payload)
+        });
+        // --- END OF CORE LOGIC ---
+
+        if (!res.ok) {
+            throw new Error(`API request failed with status ${res.status}`);
+        }
+
+        const data = await res.json();
+
+        // ✅ Extract AI response from deep JSON
+        const aiText = data?.outputs?.[0]?.outputs?.[0]?.results?.message?.data?.text || "No response received.";
+
+        // ✅ Format and display output as per your original script
+        const formatted = aiText
+          .replace(/\*\*(.*?)\*\*/g, "<b>$1</b>")
+          .replace(/\n/g, "<br>");
+
+        outputEl.innerHTML = formatted;
+        outputEl.style.display = 'block'; // Show the output container again
+        statusEl.textContent = "Done.";
+      } catch (err) {
+        outputEl.textContent = "❌ Error: " + err.message;
+        outputEl.style.display = 'block'; // Show the output container for the error
+        statusEl.textContent = "Failed.";
+      } finally {
+          // This will run whether the API call succeeds or fails
+          loaderEl.style.display = 'none'; // Always hide loader at the end
+          outputEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+  </script>
+</body>
+</html>
