@@ -147,7 +147,7 @@ Job fit Ai.json       # Langflow agent flow (import in Langflow)
 
 | Main UI | Input | Output | Agent Flow |
 |---------|-------|--------|-----------|
-| ![UI](screenshot1.png) | ![Input](screenshot2.png) | ![Output](screenshot3.png) | ![Agent](screenshot4.png) |
+| ![UI](screenshot1.png.jpg) | ![Input](screenshot2.png.jpg) | ![Output](screenshot3.png.jpg) | ![Agent](screenshot4.png.jpg) |
 
 *(Replace with your actual screenshots if desired.)*
 
